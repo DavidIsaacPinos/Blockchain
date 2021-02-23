@@ -1,5 +1,5 @@
 # Blockchain
-First attempt of blockchain in python :)
+First attempt of blockchain in python 3.8.5 :)
 This is not ment to be a didactical project as many other. You should be able to use this code in your own real crypto coin or transactions.
 
 This project was made for smart contracts majority but you can change it to your needs.
