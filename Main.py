@@ -1,16 +1,27 @@
-import hashlib
-import json
-from time import time
 from Block_class import Block
+import select
+import struct
+import hashlib      #Library for hashing obvious
+import json         #Library to format data
+from time import time
+import socket       #TCP connectivity library
+import sys          #i dont really know why
+import select       #To wait for a network packet efficiently
+import winsound     # audio lybrary
+frequency = 2500    # Set Frequency To 2500 Hertz
+duration = 500      # Set Duration To "x" ms
 #auxiliar variables do not touch
 string_difficulty='0000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
-string_offset=4
+string_offset=3
 index=0
+
+#communication port: 31445    #Because there is no known service runing in this port 
 
 blockchain = [] #function to update the chain asking other nodes goes here
 prev_hash_hex="Genesis block no previous hash"  #This will be used just for the very first block
-difficulty=9   #number of zeros after the 'string offset that will be necesary to consider as proof of work (24 is a good number)
-
+difficulty=22   #number of zeros after the 'string offset that will be necesary to consider as proof of work (24 is a good number)
+my_wallet = "0105594451"
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def hash_block(block_to_hash):
     string_object = json.dumps(block_to_hash, sort_keys=True)           #dumps the string
     block_string = string_object.encode()                               #formating the string
@@ -20,18 +31,48 @@ def hash_block(block_to_hash):
     binary_hash=bin(decimal_hash)
     return hex_hash, binary_hash
 
+def send_nudes(nude):   #function to send nudes 7u7 as a UDP message
+    REMOTE_IP = '192.168.10.255'
+    UDP_PORT = 31445
+    BUFFER_SIZE = 1024
+    s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) # UDP message
+    s.sendto(bytes(nude, "utf-8"), (REMOTE_IP, UDP_PORT))
+    s.close()
+
+def receive_nudes(connection):
+    inputs = [connection]
+    outputs = []
+    readable, writable, exceptional = select.select(inputs, outputs, inputs, 0)
+    if (len(readable)):
+        data = connection.recv(1024)
+        
+        hash2 = str(data[0:64], 'utf-8')
+        proof_of_work2=str(data[64:74], 'utf-8')
+        wallet=str(data[74:len(data)], 'utf-8')
+        return hash2, proof_of_work2, wallet
+    else:
+        return "", "", ""
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+    
+
+
+#Main while for program starts:
+server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)   #iniciates the socket
+server.bind(('', 31445))
 main_sentinel=1
 while (main_sentinel==1):
     print("New Block? Enter 1")
     print("Verify a block? Enter 2")
     print("Print the whole BlockChain? Enter 3")
     print("Exit? Enter 4")
-    choise = int(input("Your choise: "))
+    choice = int(input("Your choise: "))
 
 
-    if (choise == 1):
-        print("Calculating, please wait...")
-        
+    if (choice == 1):
         if (len(blockchain)!=0):
             prev_hash_hex, prev_hash_bin=hash_block(blockchain[index -1])
         index=index+1
@@ -39,49 +80,55 @@ while (main_sentinel==1):
         block_data=input("Enter the data of block number " + str(index)+": ")
         block_signature=input("Enter the signature of the oferer: ")
         #Function to validate a signature will go here
-        block_worker_incentive=input("How much will the miner wearn for hashing this block? ")  #There should be a function to extract how mucho money this user has in his wallet
         #End section to get the data from web server
+        print("Calculating, please wait...")
         tic=time()
         sentinel1=10
         while sentinel1!=0:
-            block = Block(index,prev_hash_hex,block_data,block_signature,block_worker_incentive,"")   #creates the block using those variable as arguments
+            block = Block(index,prev_hash_hex,block_data,block_signature,str(my_wallet),"")   #creates the block using those variable as arguments
             block_hash, block_hash_binary = hash_block(block.constructed_block)          #calculate the hash of the given block
             binary_extr=block_hash_binary[string_offset+0:string_offset+difficulty]                #extract the first "difficulty" bits of binary version of the hash so it can be compared
-            if (binary_extr==string_difficulty[0:difficulty]):          #if the first "difficulty" bits are zero it found the correct chash
-                sentinel1=0                                             #ends the while loop
-        toc=time()
-        time2=toc-tic
-        blockchain.append(block.constructed_block)
-        print(block.constructed_block + '\n')
-        print('This block HASH:' + block_hash + '\n')
-        print("Used time: " + str(time2) + " seconds\n")
-    if (choise == 2):
-        index_aux=int(input("Enter the index of the block you want to verify: "))
-        if (index_aux>=2 and index_aux<=index):
-            block_hash_aux=input("Enter the HEX hash of the already done block: ")
-            block_data=input("Enter the data of block number " + str(index)+": ")
-            block_signature=input("Enter the signature of the oferer: ")
-            block_worker_incentive=input("How much will the miner wearn for hashing this block? ")
-            proof_of_work=input("Please enter your proof of work: ")
 
-            prev_hash_hex, prev_hash_bin=hash_block(blockchain[index -2])
-            block = Block(index_aux,prev_hash_hex,block_data,block_signature,block_worker_incentive,proof_of_work)
-            block_hash, block_hash_binary = hash_block(block.constructed_block)          #calculate the hash of the given block
-            binary_extr=block_hash_binary[string_offset+0:string_offset+difficulty]                #extract the first "difficulty" bits of binary version of the hash so it can be compared
-            if (binary_extr==string_difficulty[0:difficulty] and block_hash_aux==block_hash):          #if the first "difficulty" bits are zero it found the correct chash
-                print("\n***************************************************")
-                print("Block verified successfully.")# \nAdding Block to Chain")
-                print("***************************************************\n")
-            else:
-                print("Error! Block is not valid")
-        else:
-            print("\n\nWARNING: Index range is: 2<=Index<=Blockchain_lenght\n\n")
-    if (choise==3):
+            if (binary_extr==string_difficulty[0:difficulty]):          #if the first "difficulty" bits are zero it found the correct chash
+                proof_of_work = block.proof_of_work
+                send_nudes(block_hash + proof_of_work + my_wallet)
+                break                                             #ends the while loop
+
+            rcv_hash, rcv_proof_of_work, rcv_wallet = receive_nudes(server)
+            if (len(rcv_hash)>0 and rcv_wallet != my_wallet): #This sentence is for not printing my own bradcaster message
+                print("\n \n \n RECIBIDO!********************************************")
+                print(rcv_hash)
+                print(rcv_proof_of_work)
+                print(rcv_wallet)
+
+                block = Block(index,prev_hash_hex,block_data,block_signature,rcv_wallet,rcv_proof_of_work)  #Createsblock with recieved data from remote node
+                block_hash, block_hash_binary = hash_block(block.constructed_block)                         #Calculate the hash of the given block
+                binary_extr=block_hash_binary[string_offset+0:string_offset+difficulty]                     #Extract the first "difficulty" bits of binary version of the hash so it can be compared
+                if (binary_extr==string_difficulty[0:difficulty] and rcv_hash==block_hash):                 #If the first "difficulty" bits are zero it found the correct chash
+                    print("\n***************************************************")
+                    print("Block successfully verified. \nAdding Block to Chain")
+                    print("***************************************************\n")
+                    break
+                else:
+                    print("Error! Block is not valid")
+                       
+                
+        toc=time()
+        time2=toc-tic                                           #calculate how much time was used to calculate this hash
+        winsound.Beep(frequency, duration)                      #produces a sound when the new block is ready
+        if (time2>180):difficulty=difficulty-1                  #decreases the difficulty if the time is too long
+        if (time2<120):difficulty=difficulty+1                  #increases the difficulty if the time is too short
+        blockchain.append(block.constructed_block)
+        print(block.constructed_block + ' Block HASH: ' + block_hash + '\n')
+        print("Used time: " + str(time2) + " seconds\n")
+        print("Difficult is: " + str(difficulty))  
+
+    if (choice==3):
         print("\nPrinting Full BlockChain: \n")
         print("******************************************************************************************************")
         print(blockchain)
         print("\n******************************************************************************************************\n")
-    if (choise==4):
+    if (choice==4):
         main_sentinel=2 #Ends the main while loop
 
 print ("End of program")

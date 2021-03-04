@@ -7,7 +7,7 @@ import string
 letters = string.ascii_letters
 
 class Block:
-    def __init__(self, index, previous_hash, data, signature, worker_incentive, proof_of_work):
+    def __init__(self, index, previous_hash, data, signature, worker_wallet, proof_of_work):
         if (index == "" or index<1):
             return -1
         self.index = index
@@ -20,14 +20,13 @@ class Block:
         if (signature == ""):
             return -1
         self.signature = signature
-        if (worker_incentive == ""):
-            worker_incentive = "0"
-        self.worker_incentive = worker_incentive
+        if (worker_wallet == ""):
+            return -1
+        self.worker_wallet = worker_wallet
         if (proof_of_work == ""):
             proof_of_work = ''.join(random.choice(letters) for i in range(10))
         self.proof_of_work = proof_of_work
-        string_actual_block = 'Index of block: ' + str(index) +' - Previous HASH: ' + previous_hash + " - Data of contract: " +self.data +' - Signature: '+ signature+' - Worker incentive: $' + worker_incentive + ' - Proof of work: ' +proof_of_work
-        #string_actual_block = {'Previous HASH: ', previous_hash, " Data of contract: ", self.data, ' Signature: ', signature,' Worker incentive: $' , worker_incentive , ' Proof of work: ' ,proof_of_work}
+        string_actual_block = 'Index of block: ' + str(index) +' - Previous HASH: ' + previous_hash + " - Data of contract: " +self.data +' - Signature: '+ signature+' - Worker wallet: $' + worker_wallet + ' - Proof of work: ' +proof_of_work
         self.constructed_block = string_actual_block
 
 
